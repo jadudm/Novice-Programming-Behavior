@@ -1,0 +1,108 @@
+A BlueJ Data Collection Extension
+---------------------------------------
+Matt Jadud (jadudm@gmail.com)
+Poul Henriksen (P.Henriksen@kent.ac.uk)
+---------------------------------------
+NOTE: If you have any questions or comments, please use Matt Jadud as your primary contact regarding the information and code in this project. Poul is just a kind soul who redesigned and rewrote the data collection extension, and shouldn't be hassled unnecessarily.
+
+Introduction
+============
+The BlueJ data collection extension allows researchers to capture data about student compilation behavior as well as their use of the BlueJ IDE between compilations. In terms of compilation behavior, the extension allows an interested researcher to not only capture what kinds of syntax errors a BlueJ user encounters, but also complete source code and many other pieces of interesting metadata. Likewise, a great deal of information about IDE interactions is captured whenever a user instantiates objects, invokes methods, or other similar actions in the IDE.
+
+Contents
+========
+0. Using the extension
+1. The "delta.properties" file
+2. Details of data collected.
+3. Why all this "delta" stuff?
+
+0. Using the extension
+======================
+There are three ways the extension can be used. They all produce the same data, but each effects how broadly the data is collected.
+
+0.1 Per-project collection
+--------------------------
+It is possible to collect data from specific projects only. The data will be collected regardless of where the project is opened and interacted with; for example, if a user downloads the project and executes it on their home machine, then data will be collected there (if a live internet connection is available). Likewise, if it is used in a public computing lab on a university campus, data will be collected there... however, if students open any *other* projects, no data from *those* will be collected. Put simply, this lets you target your data collection to specific projects, but not specific places.
+
+To collect data on a per-project basis, first create a project to give to your students. This may have template code included, or it might not. Either way, inside of the project folder, create a new folder called "extensions". Within the folder, add the files "delta.jar" and "delta.properties". See section 1.0 for information about configuring the extension by editing the "delta.properties" file.
+
+0.2 Per-user collection
+-----------------------
+It is possible to collect data on a user-by-user basis. This method requires the user to install the extension in their user-wide extensions folder---it is different on each platform that BlueJ supports. Currently, these folders are:
+
+UNIX: 
+<USER_HOME>/.bluej/extensions
+
+WINDOWS:
+<USER_HOME>\bluej\extensions
+
+MAC:
+<USER_HOME>/Library/Preferences/org.bluej/extensions
+
+There is no automatic way to push the extension to this location; your user must download and install the "delta.jar" file to this location, as well as the "delta.properties" file. 
+
+0.3 Per-site collection
+-----------------------
+If you install the extension in the BLUEJ_HOME path, then every user of that system will get the extension loaded every time they launch BlueJ. You might use this method if you are interested in collecting data on all students taking a course at a university. Keep in mind that if any students not actively taking part in your study use BlueJ, their data will be collected as well. The per-project basis is the easiest way to target your data collection.
+
+Under each operating system you'll find a different path for installing "global" extensions:
+
+UNIX:
+<BLUEJ_HOME>/lib/extensions
+
+WINDOWS:
+<BLUEJ_HOME>\lib\extensions
+
+Mac:
+<BLUEJ_HOME>/BlueJ.app/Contents/Resources/Java/extensions 
+ (This requires you to Control-click BlueJ.app and choose Show Package Contents)
+
+1. The "delta.properties" file
+==============================
+The "delta.properties" file controls several critical variables in the data gathering extension ("delta.jar"). You must make sure you've chosen the right values for each of these properties, or you may find yourself collecting nothing whatsoever in your research efforts.
+
+A complete file is included here for reference:
+
+[FILE]
+# The location identifier will be stored with the data. This can be used to distinguish data sources, for instance for multi institutional studies.
+location = Kent
+
+# Server type tells the client how to store the data that is logged. Currently there are two ways of doing this: Xml, and the defauilt system output.
+server.type = org.bluej.delta.client.shipper.XmlRpcShipper
+#server.type = org.bluej.delta.client.shipper.SysoutShipper
+
+# Address of the server.
+server.address = http://localhost:9000/servlets/authdb.ss
+
+# Whether to include debug output. Will be printed to the default error output.
+debug = false
+[/FILE]
+
+(Note: The tags are not part of the file.)
+
+The first variable, "location", is an identifier for this particular collection. This will be used in naming your databases---therefore, if you have several different collections going on simultaneously (perhaps for different classes/courses/modules), make sure that you give each one a different "location". For example, you might name one "AMCourse" and another "PMCourse", or similar. 
+
+The second variable is the "server.type". This allows you to choose how data is shipped/stored. You might write your own shipper, or choose to use one of the two included. We provide server support for the XML-RPC shipper. The SysoutShipper is for debugging purposes, and does not send data anywhere.
+
+The "server.address" must be a valid URL. We have defaulted it to 'localhost', which is likely to be incorrect in most cases. We recommend you use a server that is visible to everyone in your collection; if you get the URL wrong, the extension will not tell you.
+
+The last variable is "debug". This will print error messages and lots of other information to the BlueJ terminal while it is running; this can be useful for exploring what is going on if you're not seeing data go all the way from BlueJ to your server. 
+
+If something is going wrong, this is a good first place to look. You might have the URL wrong, or you might have placed the extension ("delta.jar") and the properties file ("delta.properties") in the wrong place. They should both be together in the appropriate "extensions" directory, regardless of whether it is on a per-project, per-user, or per-system installation.
+
+2. Details of data collected
+============================
+
+Currently, two kinds of data are collected: compilation events and invocation events. Compilation events are recorded according to the following schema:
+
+CREATE TABLE [Lyra_CompileData] ([id] INTEGER PRIMARY KEY, [revision] INTEGER NOT NULL DEFAULT 0, [TIMESTAMP] INTEGER, [DELTA_VERSION] TEXT, [BJ_EXT_VERSION] TEXT, [SYSUSER] TEXT, [HOME] TEXT, [OSNAME] TEXT, [OSVER] TEXT, [OSARCH] TEXT, [IPADDR] TEXT, [HOSTNAME] TEXT, [LOCATION_ID] TEXT, [PROJECT_ID] TEXT, [SESSION_ID] INTEGER, [PROJECT_PATH] TEXT, [PACKAGE_PATH] TEXT, [DELTA_NAME] TEXT, [DELTA_SEQ_NUMBER] INTEGER, [DELTA_START_TIME] INTEGER, [DELTA_END_TIME] INTEGER, [FILE_PATH] TEXT, [FILE_NAME] TEXT, [FILE_CONTENTS] TEXT, [FILE_ENCODING] TEXT, [COMPILE_SUCCESSFUL] INTEGER, [MSG_TYPE] TEXT, [MSG_MESSAGE] TEXT, [MSG_LINE_NUMBER] INTEGER, [COMPILES_PER_FILE] INTEGER, [TOTAL_COMPILES] INTEGER);
+
+Likewise, invocation events are captured according to the following schema:
+
+CREATE TABLE [Lyra_InvocationData] ([id] INTEGER PRIMARY KEY, [revision] INTEGER NOT NULL DEFAULT 0, [TIMESTAMP] INTEGER, [DELTA_VERSION] TEXT, [BJ_EXT_VERSION] TEXT, [SYSUSER] TEXT, [HOME] TEXT, [OSNAME] TEXT, [OSVER] TEXT, [OSARCH] TEXT, [IPADDR] TEXT, [HOSTNAME] TEXT, [LOCATION_ID] TEXT, [PROJECT_ID] TEXT, [SESSION_ID] INTEGER, [PROJECT_PATH] TEXT, [PACKAGE_PATH] TEXT, [DELTA_NAME] TEXT, [DELTA_SEQ_NUMBER] INTEGER, [DELTA_START_TIME] INTEGER, [DELTA_END_TIME] INTEGER, [PACKAGE] TEXT, [CLASS_NAME] TEXT, [OBJECT_NAME] TEXT, [METHOD_NAME] TEXT, [PARAMETER_TYPES] TEXT, [PARAMETERS] TEXT, [RESULT] TEXT, [INVOCATION_STATUS] TEXT);
+
+3. Why all this "delta" stuff?
+==============================
+Originally, the changes from one compilation to the next were referred to as "deltas", as the Greek symbol "delta" is often used to indicate change in Chemistry and other fields. As it turns out, we're not actually capturing the change from one compilation to the next, so the entire extension is poorly named. However, it was called that long ago, and the name stuck.
+
+So, until we change it, the extension is called "delta". Oops.

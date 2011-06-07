@@ -1,0 +1,130 @@
+\usepackage{palatino}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{varioref}
+\usepackage{url}
+\usepackage{afterpage}
+\usepackage{xspace}
+
+\usepackage[T1]{fontenc}
+\usepackage{ascii}
+\usepackage{listings}
+
+\usepackage{caption}
+\captionsetup{
+%format = hang,
+format = plain,
+%labelformat = simple,
+labelsep = period,
+%labelsep = newline,
+justification = centering,
+%justification = raggedright,
+%singlelinecheck = true,
+%width = \textwidth,
+%skip = 1ex
+}
+
+\input{creative_commons/cc.tex}
+
+
+\definecolor{yellow}{rgb}{1,1,0}
+% Create a reflective comment.
+\newcommand{\reflection}[1]{\fcolorbox{yellow}{yellow}{#1}}
+
+\newcommand{\superscript}[1]{\ensuremath{^{\textrm{#1}}}}
+\newcommand{\subscript}[1]{\ensuremath{_{\textrm{#1}}}}
+
+
+\usepackage{wrapfig}
+\newcommand{\icon}[1]{\begin{wrapfigure}{l}{10mm}%
+  \begin{center}%
+    \includegraphics[width=5mm]{images/#1}%
+  \end{center}%
+\end{wrapfigure}%
+}
+
+%\usepackage{array}
+%\newcolumntype{C}{>{\centering\arraybackslash}p{2cm}}
+%\begin{tabular}{C...}
+
+\newcommand{\strategy}[1]{\begin{tabular}{c|p{3.75in}}%
+\includegraphics[width=12mm]{images/cards.png} & {\strong STRATEGY} \newline #1 \\ %
+\end{tabular}%
+}
+
+\newcommand{\hint}[1]{\begin{tabular}{c|p{3.75in}}%
+\includegraphics[width=12mm]{images/info.png} & {\strong HINT} \newline #1 \\ %
+\end{tabular}%
+}
+
+\newcommand{\reflect}[1]{\begin{tabular}{c|p{3.75in}}%
+\includegraphics[width=12mm]{images/clipboard.png} & {\strong REFLECTION} \newline #1 \\ %
+\end{tabular}%
+}
+
+\newcommand{\bonus}[1]{\begin{tabular}{c|p{3.75in}}%
+\includegraphics[width=12mm]{images/loveletters.png} & {\strong BONUS EXPLORATION} \newline #1 \\ %
+\end{tabular}%
+}
+
+% \restylefloat{figure}
+
+\newcommand{\hwidth}{0.9}
+\newcommand{\vwidth}{0.4}
+
+\newcommand{\picnw}[2]{\begin{figure}[ht]%
+	\begin{center}%
+		\includegraphics{images/#1}%
+		\caption{#2}%
+		\label{#1}%
+	\end{center}%
+\end{figure}}
+
+\newcommand{\pic}[2]{\begin{figure}[ht]%
+	\begin{center}%
+		\includegraphics[width=0.8\linewidth]{images/#1}%
+		\caption{#2}%
+		\label{#1}%
+	\end{center}%
+\end{figure}}
+
+\newcommand{\picw}[3]{\begin{figure}[ht]%
+	\begin{center}%
+		\includegraphics[width=#2\linewidth]{images/#1}%
+		\caption{#3}%
+		\label{#1}%
+	\end{center}%
+\end{figure}}
+
+\newcommand{\picwnc}[2]{\begin{figure}[H]%
+	\begin{center}%
+		\includegraphics[width=#2\linewidth]{images/#1}%
+		\label{#1}%
+	\end{center}%
+\end{figure}}
+
+
+\newcommand{\strong}{\bfseries}
+\newcommand{\code}{\tt}
+\newcommand{\true}{{\code true}\xspace}
+\newcommand{\false}{{\code false}\xspace}
+\newcommand{\String}{{\code String}\xspace}
+\newcommand{\bool}{{\code boolean}\xspace}
+\newcommand{\method}[1]{{\code #1()}\xspace}
+
+\newcommand{\MyParSkip}{3mm}
+\parindent 0mm
+\parskip \MyParSkip
+
+
+
+\definecolor{Brown}{cmyk}{0,0.81,1,0.60}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+
+\lstset{language=Java,framesep=5pt,basicstyle=\ttfamily,
+ keywordstyle=\ttfamily\color{OliveGreen}\bfseries,
+identifierstyle=\ttfamily\color{CadetBlue}, 
+commentstyle=\textit,
+stringstyle=\ttfamily, 
+tabsize=4}

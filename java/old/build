@@ -1,0 +1,4 @@
+rm *.class
+javac -classpath "bluejext.jar:." Delta.java
+jar cmf manifest.txt Delta.jar *.class
+cp Delta.jar ../bluej-test1/extensions/

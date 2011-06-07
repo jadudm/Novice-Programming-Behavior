@@ -1,0 +1,110 @@
+<project name="Delta" default="dist" basedir=".">
+	<description>
+        Build file for the BlueJ extension Delta. 
+    </description>
+
+	<!-- 
+	*******************************************************************
+	**                                                               **
+	**                   SEE: build.properties                       **
+	**                                                               **
+	** See build.properties for properties that should be set        **
+	** individually for each user!                                   **
+	**                                                               **	
+	** Also check that the mainfest.txt is right (library names)     **
+	**                                                               **
+	*******************************************************************	
+	-->
+
+	<!-- user specific properties that are edited to match local build environment-->
+	<property file="build.properties"/>
+
+	<!-- set global properties for this build -->
+	<property name="src" location="src"/>
+	<property name="build" location="build-dir"/>
+	<property name="dist" location="dist"/>
+	<property name="apidoc" location="doc/javadoc"/>
+		
+
+	<!-- Set up classpath for compilation -->
+	<path id="delta.class.path">
+		<pathelement location="${bluej.extension.jar}"/>
+		
+		<pathelement location="${commons.codec.jar}"/>
+		<pathelement location="${xmlrpc.jar}"/>
+	</path>	
+	
+	<target name="init">
+		<mkdir dir="${build}"/>
+	</target>
+
+	<target name="create-api-doc">
+		<mkdir dir="${apidoc}"/>
+		<javadoc destdir="${apidoc}"
+	           Windowtitle="Delta API"
+		       Doctitle="Delta API"
+		       >
+			<classpath>
+				<path refid="delta.class.path" />
+			</classpath>
+			<fileset dir="${src}" defaultexcludes="yes">
+				
+			</fileset>
+		</javadoc>
+	</target>
+	
+	<target name="compile" depends="init" description="compile the source ">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac 
+			srcdir="${src}" 
+			destdir="${build}" 
+	     	fork="yes"
+            debug="on"
+            deprecation="yes" 
+			source="1.4" 
+			target="1.4">
+			<classpath>
+				<path refid="delta.class.path" />
+			</classpath>
+
+		</javac>
+	</target>
+
+	<target name="dist" depends="compile" description="generate the distribution">
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist}" />
+
+		<!-- Unpack the third party libraries so they can be included in this jar -->
+		<unjar src="${commons.codec.jar}" dest="${build}"/> 
+		<unjar src="${xmlrpc.jar}" dest="${build}"/> 
+				
+		
+		<!-- Put everything in ${build} into the delta.jar file -->
+		<jar jarfile="${dist}/delta.jar" basedir="${build}" manifest="manifest.txt"/>
+
+		<!-- Copy the properties file  -->
+		<copy file="delta.properties" todir="${dist}"/>
+
+		<!-- Copy the libraries needed >
+		<copy file="${xmlrpc.jar}" todir="${dist}"/>
+		<copy file="${commons.codec.jar}" todir="${dist}"/-->
+	</target>
+
+	<target name="copy-to-bluej" depends="dist" description="Copies all the files in dist to a bluej extensions dir. Useful for testing">
+		<copy todir="${bluej.extension.dir}">
+			<fileset dir="${dist}"/>
+		</copy>
+	</target>
+
+	<target name="clean" description="clean up">
+		<!-- Delete the ${build} and ${dist} directory trees -->
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+		<!-- Delete things in the bluej extensions dir  -->
+		<delete file="${bluej.extension.dir}/delta.jar"/>
+		<delete file="${bluej.extension.dir}/delta.properties"/>
+		<delete file="${bluej.extension.dir}/xmlrpc.jar"/>
+		<delete file="${bluej.extension.dir}/commons.codec.jar"/>
+	</target>
+</project>
+

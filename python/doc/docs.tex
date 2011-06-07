@@ -1,0 +1,213 @@
+\documentclass[12pt]{article}
+\include{meta}
+
+\title{Software for Collecting\\Novice Compilation Behavior Data}
+\author{Matthew C. Jadud}
+\date{Revision 20081220}
+
+\begin{document}
+	\maketitle
+	\begin{center}
+                \CcGroupByNcSa{0.83}{0.95ex}\\[2.5ex]
+                {\tiny\CcNote{\CcLongnameByNcSa}}
+                \vspace*{-2.5ex}
+	\end{center}
+
+\section{Introduction}
+If you want to study how novices interact with the compiler, you need two things:
+
+\begin{enumerate}
+	\item An instrumented programming environment that will capture efforts from one compilation to the next.
+	\item A place to store that data.
+\end{enumerate}
+
+Because the majority of us are not database administrators, this software provides a minimal-effort solution to collecting novice programming data. We will start by looking at the setup and care of the server-side. This will be followed by a discussion of the BlueJ client for collecting NCB data, and lastly a description of the XML-RPC-based protocol utilized by the data collection server (a guide for authoring additional clients, if you like).
+
+\section{Server}
+The data collection server is now a short Python script. When executed, it provides a small, stand-alone HTTP server that exposes several XML-RPC methods for storing data as well as turning the data collection on or off.
+
+\subsection{System Requirements}
+The server-side is a small Python script. Any system with Python 2.4 or greater installed should be able to execute the server without the installation of any additional software. So far, the server has been tested on the following platforms:
+
+\begin{center}
+\begin{tabular}{l|c|c}
+	\hline
+	{\strong Operating System} & {\strong Kernel} & {\strong Python Version} \\
+	\hline
+	\hline
+	Mac OS X 10.5.5 & Darwin Kernel Version 9.5.0 & 2.5.1 \\
+	Fedora 9 & 2.6.25.14-108.fc9.i686 & 2.5.1 \\
+	Xubuntu 8.04 & 2.6.24-16-generic & 2.5.2 \\
+	\hline
+\end{tabular}
+\end{center}
+
+The server, when running, has a resident memory image of roughly 4MB. Under heavy load, it does not appear to grow its memory requirements in any significant way. Any modern machine with 64MB of RAM or more that is capable of launching a Python interpreter should have sufficient resources to run the server.
+
+Disk space required for storing data will vary depending on the number of requests made against the DB. Given that it is difficult to find drives that are smaller than many {\em gigabytes} today, it is unlikely that the server will run out of disk while performing its data collection activities.
+
+\subsection{Configuring the Server}
+There are four variables that the user can (safely) change when setting up the server. These are in the file {\code config.py} that should be found in the same directory as the server itself. In any reasonable text editor, you may open this file and edit the values found there.
+
+\subsubsection{{\code serverAddress}}
+The {\code serverAddress} is a string that {\strong MUST} be set to the IP address of the host that you are executing on. For example, when I am at home, my computer has the IP address {\code 192.168.1.43}. If I want to collect data on my computer at home, I must modify the first variable so that it reads:
+
+\begin{verbatim}
+	serverAddress = '192.168.1.43'
+\end{verbatim}
+
+If you want to test both a client and server on the same machine, you can use the value {\code 'localhost'}. This will prevent any outside clients from sending data to your server.
+
+\subsubsection{{\code serverPort}}
+The {\code serverPort} is a number. If you are running the server as an unprivileged user, it {\code MUST} be greater than 1024. The default value is 8080.
+
+\begin{verbatim}
+	serverPort = 8080
+\end{verbatim}
+
+If you have made special provisions, you can set this value to something less than 1024. Although executing this server as the user root would allow you to collect data over a low-number port, this is not recommended.
+
+\subsubsection{{\code dataPath}}
+The {\code dataPath} is a full path to the directory where you want your research data to be stored. Make sure that:
+
+\begin{enumerate}
+	\item The directory exists.
+	\item The user you are executing the server as has permission to write to that directory.
+\end{enumerate}
+
+By default, this is set to the value {\code '/tmp/ncb'}. It is not advised that you store your research data in {\code /tmp}, as this is accessible by many, and it will disappear if the server looses power. Somewhere in your home directory (preferably somewhere that gets backed up regularly) is preferred.
+
+\subsubsection{{\code debugServer}}
+If you want debug messages to be dumped to the console while the server is running, set this value to {\code True}. This is unlikely to be necessary.
+
+\subsubsection{{\code controlPassword}}
+The {\code controlPassword} should be set to something other than the default {\code 'changeme'}. This password is used when issuing commands to the server to turn data collection on or off.
+
+\subsection{Execution}
+The server does not need to be executed as a privileged user (ie. it can execute as a non-root user). If you wish to execute the server on a port lower than 1024, you will need to make special provisions. Otherwise, the user Mal Reynolds (reynoldsm) would simply do the following at the command prompt:
+\begin{verbatim}
+	[reynoldsm@vm server] python collection-server.py
+\end{verbatim}
+
+The script loads the configuration data, checks to make sure that the destination directory for data exists, and begins waiting to capture data. If the destination directory does not exist, the server shuts down immediately, and the {\code dataPath} variable in {\code config.py} should be updated appropriately.
+
+\subsubsection{Keeping the server running}
+The easiest way to keep the server running is to run it under the UNIX utility {\code screen}. 
+
+To do this, first run {\code screen}.
+
+\begin{verbatim}
+	[reynoldsm@vm server] screen
+\end{verbatim}
+
+After a splash screen, you'll be back at a prompt. You can now run commands as per normal. You might launch the data collection server as per the last section. Then, after you know everything is working, you can type {\code CTRL-A CTRL-D} to detach from the {\code screen}. This will leave your server running in the background even if you log out.
+
+To re-attach, type:
+
+\begin{verbatim}
+	screen -ls
+	screen -r <num>
+\end{verbatim}
+
+The first command lists the screens you have running. Once you find the ID for the screen you were running, you can re-attach to it later to shut down the server.
+
+\subsection{Controlling the Server}
+Based on previous use, the Python collection server can be left running, but it can be told to stop collecting data. This can be done with a command-line client. It is currently called {\code collection-control.py}.
+
+Like the server, there is a {\code config.py} file that you must modify. You will need to set the variables in that file to the same values as you used in the server configuration.
+
+Then, on the command line, run the script.
+
+\begin{verbatim}
+	[reynoldsm@vm server] python collection-control.py
+\end{verbatim}
+
+
+If you set the configuration parameters incorrectly, it is likely that this script will die with an error. (In particular, if you have the IP address of the server wrong, it will die with a network error.) 
+
+If you have everything correct, you will be greeted with something that looks like this:
+
+\begin{verbatim}
+[reynoldsm@vm control] python collection-control.py 
+	---
+	--- Server is running.
+	---
+
+	[ s ] Get server status.
+	[ t ] Toggle server state.
+	[ q ] Quit (does not effect server).
+	> 
+\end{verbatim}
+
+These are all single-key commands; for example, to toggle the server state, press {\code t} and hit return. To quit the control application, press {\code q}. (Quitting the control application does not, in any way, effect the server.) Using this command-line application, it is possible to enable and disable data collection on the server without actually starting and stopping it. This way, the server can be left running, and the busy researcher can simply enable or disable data collection remotely.
+
+\subsection{Monitoring the Server}
+
+If you want, you can leave a server monitor running in a terminal window.
+
+\begin{verbatim}
+[reynoldsm@vm control] python server-monitor.py 
+[2008-12-20 20:45:16] Collecting
+[2008-12-20 20:45:46] Collecting
+[2008-12-20 20:46:16] Collecting
+\end{verbatim}
+
+This application checks the status of the server every {\code sleepTime} seconds (a value set in {\code config.py}). Without any interaction at all, this script will simply keep watch on the server. 
+
+This script has three outputs:
+\begin{description}
+	\item[Collecting] The server is up, and collecting data.
+	\item[Idle] The server is up, and it is {\strong not} collecting data.
+	\item[SERVER DOWN] If you get this, the monitor cannot reach the server. This might be because {\code config.py} is setup incorrectly, or it might be because the server has failed for some reason. It is currently beyond this little script's ability to give you better information than it does currently.
+\end{description}
+
+If the server is operating correctly, you will only see {\code Collecting} and {\code Idle} messages on the console. If something goes very wrong, you will see a {\code SERVER DOWN} message... and if you're in the middle of a data collection, you should scramble quickly to figure out why things are broken.
+
+\subsection{Testing the server}
+If you want to stress-test your server a bit, use the {\code server-test.py} script. It must be configured like all of the other scripts. By default, it hits the server as hard as possible (zero seconds between database inserts). For fun, run the test script on multiple machines at the same time. 
+
+This should not be explicitly necessary. If you have all of the monitor scripts working, the server should be functioning properly. However, as a last step, running this script will tell you if the server is correctly collecting data.
+
+\subsection{Archiving the data}
+The server writes SQLite database files to the directory specified in its config. These files can easily be backed up by any means you see fit. For example, they could all be copied (via {\code scp}) from the collection server to another host. Put simply, they are {\strong just files}, and therefore you can back them up the way you would back up any file. 
+
+\section{The BlueJ Client}
+The BlueJ client has not changed significantly since 2006. The most recent version is 20081220, and in that version the ``security'' features of the script have been removed.\footnote{These ``security'' features did not add any real security to the process of collecting data, and only added to the complexity of both the client and the server. Therefore, they have been removed.}
+
+As with all BlueJ extensions, you should have a folder called {\code extensions} in your BlueJ project, and in there you should find the {\code delta.jar} file as well as the {\code delta.properties} file. An example {\code delta.properties} file is included here:
+
+\begin{verbatim}
+# The location identifier will be stored with the data. 
+# This can be used to distinguish data sources, for 
+# instance for multi institutional studies.
+location=NewCollection
+
+# Server type tells the client how to store 
+# the data that is logged. Currently there are
+# two ways of doing this: XML-RPC, and the
+# defauilt system output.
+# UNUSED SYSOUT SHIPPER
+# server.type=org.bluej.delta.client.shipper.SysoutShipper
+# USE THE XML-RPC SHIPPER FOR DATA COLLECTION
+server.type=org.bluej.delta.client.shipper.XmlRpcShipper
+
+# Address of the server.
+server.address=http://192.168.68.123:8080/RPC2
+
+# Whether to include debug output. 
+# Will be printed to the default error output.
+debug=false
+\end{verbatim}
+
+As with everything previous, you must edit the {\code server.address}. You should also change the {\code location} variable to reflect where you are doing your data collection. {\strong Do be careful!} You do not want to leave any spaces anywhere on the {\code location} line. This is especially true at the end of the line---where they are hard to see! (The server should strip spaces if you accidentally use one, but be vigilant!)
+
+If ({\code delta.jar} and {\code delta.properties}) are in the project's {\code extensions} folder, then that project will be enabled for data collection.\footnote{If you want every client to collect data all the time, place this folder in the global extensions directory.} Once the student begins interacting with BlueJ, two files will be created on the server: 
+\begin{itemize}
+	\item {\code {\em location}\_CompileData-{\em hash}.sqlite}
+	\item {\code {\em location}\_InvocationData-{\em hash}.sqlite}.
+\end{itemize}	
+A hashcode is included in the filename as well, which helps guarantee uniqueness if the data collected in these files ever changes.  Within these files are Base64 encoded (MIME-encoded) records of every compilation and invocation a student made while interacting with this particular project. 
+
+
+
+\end{document}
